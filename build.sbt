@@ -271,3 +271,18 @@ lazy val googleCloudHttp4s = crossProject(JSPlatform, JVMPlatform)
       "co.fs2" %%% "fs2-io" % fs2Version
     )
   )
+
+lazy val azureFunctions = crossProject(JSPlatform, JVMPlatform)
+  .in(file("azure-functions"))
+  .settings(
+    name := "azure-functions", 
+    libraryDependencies ++= Seq()
+  )
+  .settings(commonSettings)
+  .jsSettings(
+    libraryDependencies ++= Seq()
+  )
+  .jvmSettings(
+    Test / fork := true,
+    libraryDependencies ++= Seq()
+  )
