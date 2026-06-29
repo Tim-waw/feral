@@ -280,7 +280,11 @@ lazy val azureFunctions = crossProject(JSPlatform, JVMPlatform)
   )
   .settings(commonSettings)
   .jsSettings(
-    libraryDependencies ++= Seq()
+    libraryDependencies ++= Seq(
+      "org.typelevel" %%% "cats-effect" % catsEffectVersion,
+      "io.circe" %%% "circe-scodec" % circeVersion,
+      "org.http4s" %%% "http4s-server" % http4sVersion
+    )
   )
   .jvmSettings(
     Test / fork := true,
