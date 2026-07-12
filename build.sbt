@@ -20,6 +20,7 @@ name := "feral"
 
 ThisBuild / tlBaseVersion := "0.3"
 ThisBuild / startYear := Some(2021)
+ThisBuild / isSnapshot := true
 
 ThisBuild / developers := List(
   tlGitHubDev("armanbilge", "Arman Bilge"),
@@ -76,6 +77,7 @@ lazy val root =
       lambdaHttp4s,
       lambdaCloudFormationCustomResource,
       googleCloudHttp4s,
+      azureFunctions,
       examples,
       unidocs
     )
@@ -276,15 +278,18 @@ lazy val azureFunctions = crossProject(JSPlatform, JVMPlatform)
   .in(file("azure-functions"))
   .settings(
     name := "azure-functions", 
-    libraryDependencies ++= Seq()
-  )
-  .settings(commonSettings)
-  .jsSettings(
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-effect" % catsEffectVersion,
       "io.circe" %%% "circe-scodec" % circeVersion,
       "org.http4s" %%% "http4s-server" % http4sVersion
-    )
+    ),
+    tlVersionIntroduced := List("2.13", "3").map(_ -> "0.3.1").toMap
+  )
+  .settings(commonSettings)
+  .jsSettings(
+    libraryDependencies ++= Seq(
+    ),
+    scalaJSLinkerConfig ~= { _.withModuleKind(ModuleKind.CommonJSModule) }
   )
   .jvmSettings(
     Test / fork := true,

@@ -3,20 +3,19 @@ package feral.functions
 import scala.scalajs.js
 import scala.scalajs.js.annotation._
 import feral.functions.facade.InvocationContext
-//import scala.scalajs.js.JSConverters._
 
-@js.native
-@JSImport("@azure/functions", "app")
-object App extends js.Object {
-  def http(
-      name: String,
-      appConfig: js.Object
-  ): Unit = js.native
-}
+import org.http4s.HttpApp
+//import cats.effect.IO
+
+//import scala.scalajs.js.JSConverters._
+// import org.http4s.nodejs.IncomingMessage
+// import org.http4s.nodejs.ServerResponse
 
 abstract class IOAzureHttpFunction {
+  //val appFromIC: InvocationContext => HttpApp[IO]
+
   final def main(args: Array[String]): Unit =
-    App.http(functionName, appConfig)
+    IOAzureHttpFunction.App.http(functionName, appConfig)
 
   protected val functionName: String = getClass.getSimpleName.init
 
@@ -47,4 +46,13 @@ abstract class IOAzureHttpFunction {
   }
 }
 
-object IOAzureHttpFunction {}
+object IOAzureHttpFunction {
+  @js.native
+  @JSImport("@azure/functions", "app")
+  object App extends js.Object {
+    def http(
+        name: String,
+        appConfig: js.Object
+    ): Unit = js.native
+  }
+}
