@@ -5,14 +5,13 @@ import scala.scalajs.js.annotation._
 import feral.functions.facade.InvocationContext
 
 import org.http4s.HttpApp
-//import cats.effect.IO
+import cats.effect.IO
+import cats.effect.Resource
 
 //import scala.scalajs.js.JSConverters._
-// import org.http4s.nodejs.IncomingMessage
-// import org.http4s.nodejs.ServerResponse
 
 abstract class IOAzureHttpFunction {
-  //val appFromIC: InvocationContext => HttpApp[IO]
+  def buildHttpApp(context: InvocationContext): Resource[IO, HttpApp[IO]]
 
   final def main(args: Array[String]): Unit =
     IOAzureHttpFunction.App.http(functionName, appConfig)
