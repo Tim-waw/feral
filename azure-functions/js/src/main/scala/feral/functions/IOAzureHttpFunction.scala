@@ -9,6 +9,9 @@ import cats.effect.IO
 import cats.effect.Resource
 
 //import scala.scalajs.js.JSConverters._
+import org.http4s.Request
+import feral.functions.facade.JSRequest
+import feral.functions.facade.JSHeaders
 
 abstract class IOAzureHttpFunction {
   def buildHttpApp(context: InvocationContext): Resource[IO, HttpApp[IO]]
@@ -16,7 +19,7 @@ abstract class IOAzureHttpFunction {
   final def main(args: Array[String]): Unit =
     IOAzureHttpFunction.App.http(functionName, appConfig)
 
-  protected val functionName: String = getClass.getSimpleName.init
+  protected val functionName: String = getClass.getSimpleName.init //may want to add timestamp for testing
 
   private val appConfig = js
     .Dynamic
@@ -28,9 +31,11 @@ abstract class IOAzureHttpFunction {
     )
 
   private lazy val handlerFn
-      : js.Function2[js.Any, InvocationContext, js.Promise[js.UndefOr[js.Any]]] = {
+      : js.Function2[JSRequest, InvocationContext, js.Promise[js.UndefOr[js.Any]]] = {
     (request, context) => {
-      context.log("this is a log msg!!!")
+      val h = request.headers
+      val headers = JSHeaders.keyList(h)
+      context.log(s"headers: $headers")
 
       val response =
         js.Dynamic
