@@ -35,7 +35,7 @@ abstract class IOAzureHttpFunction {
     (request, context) => {
       val h = request.headers
       val headers = JSHeaders.keyList(h)
-      context.log(s"headers: $headers")
+      context.log(s"final pipeline! last try for now")
 
       val response =
         js.Dynamic

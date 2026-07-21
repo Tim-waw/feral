@@ -2,13 +2,14 @@ package feral.functions.facade
 
 import scala.scalajs.js
 
-import scala.collection.mutable.ListBuffer
+//may want to change to requestFacade.., think it over
 
 @js.native
 trait JSRequest extends js.Object {
   def method: String = js.native
   def url: String = js.native
   def headers: JSHeaders = js.native
+  def body: JSReadableStream = js.native
 }
 
 @js.native
@@ -17,18 +18,21 @@ trait JSHeaders extends js.Object {
   def keys(): js.Iterator[String] = js.native 
 }
 
+@js.native
+trait JSReadableStream extends js.Object
+
 object JSHeaders {
   def keyList(h: JSHeaders): List[String] = {
-    val acc = ListBuffer[String]()
+    val builder = List.newBuilder[String]
     val itr = h.keys()
     var entity = itr.next()
 
     while(!entity.done) {
-      acc.addOne(entity.value)
+      builder.addOne(entity.value)
       entity = itr.next()
     }
 
-    acc.result()
+    builder.result()
   }
 
   object Syntax {
@@ -40,7 +44,8 @@ object JSHeaders {
 
 method: Method.GET, Method.POST, etc.
 uri: representation of the request URI
-httpVersion: the HTTP version
+httpVersion: the HTTP version //not used in lambda-http4s
 headers: collection of Headers
 body: fs2.Stream[F, Byte] defining the body of the request
-attributes: Immutable Map used for carrying additional information in a type safe fashion */
+attributes: Immutable Map used for carrying additional information in a type safe fashion //not used in lambda-http4s
+*/
