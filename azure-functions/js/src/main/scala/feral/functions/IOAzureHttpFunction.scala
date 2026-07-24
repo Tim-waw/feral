@@ -15,6 +15,8 @@ import org.http4s.Request
 import feral.functions.facade.JSRequest
 import feral.functions.facade.JSHeaders
 import cats.effect.std.Dispatcher
+import feral.functions.util.Parser
+import fs2.text.utf8
 
 abstract class IOAzureHttpFunction {
   protected def handler: InvocationContext => Resource[IO, HttpApp[IO]]
@@ -24,7 +26,8 @@ abstract class IOAzureHttpFunction {
   final def main(args: Array[String]): Unit =
     IOAzureHttpFunction.App.http(functionName, appConfig)
 
-  private val functionName: String = getClass.getSimpleName.init //may want to add timestamp for testing
+  private val functionName: String =
+    getClass.getSimpleName.init // may want to add timestamp for testing
 
   private val appConfig = js
     .Dynamic
@@ -36,32 +39,49 @@ abstract class IOAzureHttpFunction {
     )
 
   private lazy val handlerFn
-    : js.Function2[JSRequest, InvocationContext, js.Promise[js.UndefOr[js.Any]]] = {
+      : js.Function2[JSRequest, InvocationContext, js.Promise[js.UndefOr[js.Any]]] = {
     val dispatcherHandle = {
       Dispatcher
         .parallel[IO](await = true)
         .product(Resource.pure(handler))
         .allocated
-        .map(_._1) //drop unused finalizer, this resource will live for the duration
+        .map(_._1) // drop unused finalizer, this resource will live for the duration
         .unsafeToPromise()(runtime)
     }
 
-    (request, context) => {
-      //do dispatcher thing
+    (requestJS, context) => {
+      // do dispatcher thing
+      context.log("befor FOR COMP")
+      dispatcherHandle.`then`[js.Any] {
+        case (dispatcher, handle) => {
+          val io = for {
+            _ <- IO(context.log("FOR COMP"))
+            request <- Parser.decodeRequest[IO](requestJS)
+            _ <- IO(context.log(request.uri.toString()))
+            response <- handle(context).use(app => app.run(request))
+            _ <- IO(context.log(response.status.toString()))
+            bodyList <- response.body.through(utf8.decode).compile.toList
+            _ <- IO(context.log(bodyList.toString()))
+            respEncoded <- Parser.encodeResponse[IO](response)
+            _ <- IO(context.log("Decoded")) 
+            _ <- IO(context.log(respEncoded.toString()))
+          } yield respEncoded 
+          
+          dispatcher.unsafeToPromise(io)
+        }
+      }
       /////
-      val h = request.headers
-      val headers = JSHeaders.keyList(h)
-      context.log(s"final pipeline! last try for now")
+      // impure!!!
 
-      val response =
-        js.Dynamic
-          .literal(
-            status = 200,
-            body = "payload",
-            headers = js.Dynamic.literal("content-type" -> "text/plain")
-          )
+      // val response =
+      //   js.Dynamic
+      //     .literal(
+      //       status = 200,
+      //       body = "payload",
+      //       headers = js.Dynamic.literal("content-type" -> "text/plain")
+      //     )
 
-      js.Promise.resolve[js.UndefOr[js.Any]](response)
+      // js.Promise.resolve[js.UndefOr[js.Any]](response)
     }
   }
 }
