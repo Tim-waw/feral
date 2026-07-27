@@ -51,17 +51,20 @@ abstract class IOAzureHttpFunction {
 
     (requestJS, context) => {
       // do dispatcher thing
-      context.log("befor FOR COMP")
+      //context.log("befor FOR COMP")
       dispatcherHandle.`then`[js.Any] {
         case (dispatcher, handle) => {
           val io = for {
             _ <- IO(context.log("FOR COMP"))
             request <- Parser.decodeRequest[IO](requestJS)
             _ <- IO(context.log(request.uri.toString()))
+            bodyList <- request.body.through(utf8.decode).compile.toList
+            _ <- IO(context.log("req body: " + bodyList.toString()))
+            
             response <- handle(context).use(app => app.run(request))
             _ <- IO(context.log(response.status.toString()))
             bodyList <- response.body.through(utf8.decode).compile.toList
-            _ <- IO(context.log(bodyList.toString()))
+            _ <- IO(context.log("resp body: " + bodyList.toString()))
             respEncoded <- Parser.encodeResponse[IO](response)
             _ <- IO(context.log("Decoded")) 
             _ <- IO(context.log(respEncoded.toString()))

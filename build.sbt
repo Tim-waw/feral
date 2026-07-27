@@ -281,7 +281,8 @@ lazy val azureFunctions = crossProject(JSPlatform, JVMPlatform)
     libraryDependencies ++= Seq(
       "org.typelevel" %%% "cats-effect" % catsEffectVersion,
       "io.circe" %%% "circe-scodec" % circeVersion,
-      "org.http4s" %%% "http4s-server" % http4sVersion
+      "org.http4s" %%% "http4s-server" % http4sVersion,
+      "co.fs2" %%% "fs2-io" % fs2Version
     ),
     tlVersionIntroduced := List("2.13", "3").map(_ -> "0.3.1").toMap
   )

@@ -11,18 +11,21 @@ import feral.functions.facade.JSRequest
 import feral.functions.facade.JSHeaders
 
 import cats.effect.kernel.Concurrent
+import cats.effect.kernel.Async
 import cats.syntax.all._
 
 import org.typelevel.ci.CIString
 
 import scala.scalajs.js
+import feral.functions.facade.JSReadableStream
 //import scala.scalajs.js.annotation._
 
 object Parser {
-  def decodeRequest[F[_]: Concurrent](request: JSRequest): F[Request[F]] = {
+  def decodeRequest[F[_]: Async](request: JSRequest): F[Request[F]] = {
     for {
       method <- Method.fromString(request.method).liftTo[F]
       uri <- Uri.fromString(request.url).liftTo[F]
+      body = JSReadableStream.toFs2[F](request.body)
       headers = {
         val builder = List.newBuilder[Header.Raw]
         val keys = JSHeaders.keyList(request.headers)
@@ -31,15 +34,17 @@ object Parser {
 
         Headers(builder.result())
       }
+      //body = JSReadableStream.toFs2[F](request.body) //need to use generic type parameter in tofs2
     } yield Request[F](
       method = method,
       uri = uri,
-      headers = headers
+      headers = headers,
+      body = body // need to convert into Entity
     )
   }
 
   def encodeResponse[F[_]: Concurrent](response: Response[F]): F[js.Any] = {
-    val headersList = ("TEST", "value") :: response.headers.headers.map(h => (h.name.toString, h.value)) 
+    val headersList = response.headers.headers.map(h => (h.name.toString, h.value)) 
     val headers = js.Dictionary(headersList:_*)
 
     //val body = response.body //need to figure this out later
@@ -49,7 +54,7 @@ object Parser {
       .literal(
         status = response.status.code,
         headers = headers,
-        body = "Body Not Parsed!!!"
+        body = response.body.through(fs2.text.utf8.decode).compile.toString
       )
 
     // val resp: js.Any =
