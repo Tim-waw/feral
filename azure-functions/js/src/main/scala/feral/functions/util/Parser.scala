@@ -20,6 +20,9 @@ import scala.scalajs.js
 import feral.functions.facade.JSReadableStream
 //import scala.scalajs.js.annotation._
 
+import fs2.Stream
+import cats.effect.std.Dispatcher
+
 object Parser {
   def decodeRequest[F[_]: Async](request: JSRequest): F[Request[F]] = {
     for {
@@ -30,11 +33,12 @@ object Parser {
         val builder = List.newBuilder[Header.Raw]
         val keys = JSHeaders.keyList(request.headers)
 
-        keys.foreach(k => builder.addOne(Header.Raw(CIString(k), request.headers.get(k).getOrElse(""))))
+        keys.foreach(k =>
+          builder.addOne(Header.Raw(CIString(k), request.headers.get(k).getOrElse(""))))
 
         Headers(builder.result())
       }
-      //body = JSReadableStream.toFs2[F](request.body) //need to use generic type parameter in tofs2
+      // body = JSReadableStream.toFs2[F](request.body) //need to use generic type parameter in tofs2
     } yield Request[F](
       method = method,
       uri = uri,
@@ -43,18 +47,18 @@ object Parser {
     )
   }
 
-  def encodeResponse[F[_]: Concurrent](response: Response[F]): F[js.Any] = {
-    val headersList = response.headers.headers.map(h => (h.name.toString, h.value)) 
-    val headers = js.Dictionary(headersList:_*)
+  def encodeResponse[F[_]: Async](response: Response[F], dispatcher: Dispatcher[F]): F[js.Any] = {
+    val headersList = response.headers.headers.map(h => (h.name.toString, h.value))
+    val headers = js.Dictionary(headersList: _*)
 
-    //val body = response.body //need to figure this out later
+    // val body = response.body //need to figure this out later
 
     val responseEncoded: js.Any = js
       .Dynamic
       .literal(
         status = response.status.code,
         headers = headers,
-        body = response.body.through(fs2.text.utf8.decode).compile.toString
+        body = toReadableStream[F](response.body, dispatcher)//response.body.through(fs2.text.utf8.decode).compile.toString
       )
 
     // val resp: js.Any =
@@ -66,6 +70,31 @@ object Parser {
     //       )
 
     responseEncoded.pure[F]
-    //resp.pure[F]
+    // resp.pure[F]
+  }
+
+  private def toReadableStream[F[_]: Async](
+      stream: Stream[F, Byte],
+      dispatcher: Dispatcher[F]): js.Any = {
+    js.Dynamic.newInstance(js.Dynamic.global.ReadableStream)(
+      js.Dynamic.literal(
+        start = (controller: js.Dynamic) => {
+          val io = {
+            stream.chunks.evalMap { chunk =>
+              Async[F].delay {
+                val array = new js.typedarray.Uint8Array(chunk.size) 
+                chunk.toArray.zipWithIndex.foreach{ case (byte, index) => array(index) = byte }
+                controller.enqueue(array)
+              }
+              .void
+            }
+            .onFinalize(Async[F].delay(controller.close()).void)
+            .compile
+            .drain
+          }
+          dispatcher.unsafeToPromise(io)
+        }
+      )
+    )
   }
 }

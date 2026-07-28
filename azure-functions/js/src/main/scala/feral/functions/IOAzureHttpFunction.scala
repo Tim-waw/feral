@@ -58,14 +58,14 @@ abstract class IOAzureHttpFunction {
             _ <- IO(context.log("FOR COMP"))
             request <- Parser.decodeRequest[IO](requestJS)
             _ <- IO(context.log(request.uri.toString()))
-            bodyList <- request.body.through(utf8.decode).compile.toList
-            _ <- IO(context.log("req body: " + bodyList.toString()))
+            //bodyList <- request.body.through(utf8.decode).compile.toList
+            //_ <- IO(context.log("req body: " + bodyList.toString()))
             
             response <- handle(context).use(app => app.run(request))
             _ <- IO(context.log(response.status.toString()))
-            bodyList <- response.body.through(utf8.decode).compile.toList
-            _ <- IO(context.log("resp body: " + bodyList.toString()))
-            respEncoded <- Parser.encodeResponse[IO](response)
+            //bodyList <- response.body.through(utf8.decode).compile.toList
+            //_ <- IO(context.log("resp body: " + bodyList.toString()))
+            respEncoded <- Parser.encodeResponse[IO](response, dispatcher)
             _ <- IO(context.log("Decoded")) 
             _ <- IO(context.log(respEncoded.toString()))
           } yield respEncoded 
