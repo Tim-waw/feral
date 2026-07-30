@@ -11,12 +11,12 @@ import cats.syntax.all._
 import cats.effect.unsafe.IORuntime
 
 //import scala.scalajs.js.JSConverters._
-import org.http4s.Request
+//import org.http4s.Request
 import feral.functions.facade.JSRequest
-import feral.functions.facade.JSHeaders
+//import feral.functions.facade.JSHeaders
 import cats.effect.std.Dispatcher
 import feral.functions.util.Parser
-import fs2.text.utf8
+//import fs2.text.utf8
 
 abstract class IOAzureHttpFunction {
   protected def handler: InvocationContext => Resource[IO, HttpApp[IO]]
@@ -27,7 +27,7 @@ abstract class IOAzureHttpFunction {
     IOAzureHttpFunction.App.http(functionName, appConfig)
 
   private val functionName: String =
-    getClass.getSimpleName.init // may want to add timestamp for testing
+    getClass.getSimpleName.init
 
   private val appConfig = js
     .Dynamic
@@ -50,41 +50,17 @@ abstract class IOAzureHttpFunction {
     }
 
     (requestJS, context) => {
-      // do dispatcher thing
-      //context.log("befor FOR COMP")
       dispatcherHandle.`then`[js.Any] {
         case (dispatcher, handle) => {
           val io = for {
-            _ <- IO(context.log("FOR COMP"))
             request <- Parser.decodeRequest[IO](requestJS)
-            _ <- IO(context.log(request.uri.toString()))
-            //bodyList <- request.body.through(utf8.decode).compile.toList
-            //_ <- IO(context.log("req body: " + bodyList.toString()))
-            
             response <- handle(context).use(app => app.run(request))
-            _ <- IO(context.log(response.status.toString()))
-            //bodyList <- response.body.through(utf8.decode).compile.toList
-            //_ <- IO(context.log("resp body: " + bodyList.toString()))
             respEncoded <- Parser.encodeResponse[IO](response, dispatcher)
-            _ <- IO(context.log("Decoded")) 
-            _ <- IO(context.log(respEncoded.toString()))
-          } yield respEncoded 
-          
+          } yield respEncoded
+
           dispatcher.unsafeToPromise(io)
         }
       }
-      /////
-      // impure!!!
-
-      // val response =
-      //   js.Dynamic
-      //     .literal(
-      //       status = 200,
-      //       body = "payload",
-      //       headers = js.Dynamic.literal("content-type" -> "text/plain")
-      //     )
-
-      // js.Promise.resolve[js.UndefOr[js.Any]](response)
     }
   }
 }

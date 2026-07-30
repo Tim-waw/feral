@@ -10,7 +10,7 @@ import org.http4s.Response
 import feral.functions.facade.JSRequest
 import feral.functions.facade.JSHeaders
 
-import cats.effect.kernel.Concurrent
+//import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Async
 import cats.syntax.all._
 
@@ -61,18 +61,10 @@ object Parser {
         body = toReadableStream[F](response.body, dispatcher)//response.body.through(fs2.text.utf8.decode).compile.toString
       )
 
-    // val resp: js.Any =
-    //     js.Dynamic
-    //       .literal(
-    //         status = 200,
-    //         body = "payload",
-    //         headers = js.Dynamic.literal("content-type" -> "text/plain")
-    //       )
-
     responseEncoded.pure[F]
-    // resp.pure[F]
   }
 
+  //probably want to change this to implement pull and cancel, this may work but is not the best impl
   private def toReadableStream[F[_]: Async](
       stream: Stream[F, Byte],
       dispatcher: Dispatcher[F]): js.Any = {

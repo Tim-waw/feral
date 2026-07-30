@@ -110,13 +110,3 @@ object JSReadableStream {
 
   object Syntax {}
 }
-
-/* Parameters
-
-method: Method.GET, Method.POST, etc.
-uri: representation of the request URI
-httpVersion: the HTTP version //not used in lambda-http4s
-headers: collection of Headers
-body: fs2.Stream[F, Byte] defining the body of the request
-attributes: Immutable Map used for carrying additional information in a type safe fashion //not used in lambda-http4s
-*/
