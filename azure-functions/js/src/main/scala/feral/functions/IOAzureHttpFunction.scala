@@ -20,6 +20,7 @@ import feral.functions.util.Parser
 
 abstract class IOAzureHttpFunction {
   protected def handler: InvocationContext => Resource[IO, HttpApp[IO]]
+  protected def qBound: Int = 100
 
   private val runtime = IORuntime.global
 
@@ -55,7 +56,7 @@ abstract class IOAzureHttpFunction {
           val io = for {
             request <- Parser.decodeRequest[IO](requestJS)
             response <- handle(context).use(app => app.run(request))
-            respEncoded <- Parser.encodeResponse[IO](response, dispatcher)
+            respEncoded <- Parser.encodeResponseV2[IO](response, dispatcher, qBound)
           } yield respEncoded
 
           dispatcher.unsafeToPromise(io)
