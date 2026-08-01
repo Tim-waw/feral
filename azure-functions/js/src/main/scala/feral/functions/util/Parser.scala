@@ -98,12 +98,12 @@ object Parser {
       .newInstance(js.Dynamic.global.ReadableStream)(
         js.Dynamic
           .literal(
-            start = (controller: js.Dynamic) => { /*NoOp*/ },
+            start = (_: js.Dynamic) => { /*NoOp*/ },
             pull = (controller: js.Dynamic) => {
               val effect = createPullEffect[F](controller, q)
               dispatcher.unsafeToPromise(effect)
             },
-            cancel = (reason: js.UndefOr[js.Any]) => {
+            cancel = (_: js.UndefOr[js.Any]) => {
               dispatcher.unsafeToPromise(streamFiber.cancel)
             }
           )
