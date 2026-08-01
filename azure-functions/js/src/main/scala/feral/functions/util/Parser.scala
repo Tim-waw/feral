@@ -55,59 +55,6 @@ object Parser {
 
   def encodeResponse[F[_]: Async](
       response: Response[F],
-      dispatcher: Dispatcher[F]): F[js.Any] = {
-    val headersList = response.headers.headers.map(h => (h.name.toString, h.value))
-    val headers = js.Dictionary(headersList: _*)
-
-    // val body = response.body //need to figure this out later
-
-    val responseEncoded: js.Any = js
-      .Dynamic
-      .literal(
-        status = response.status.code,
-        headers = headers,
-        body = toReadableStream[F](
-          response.body,
-          dispatcher
-        ) // response.body.through(fs2.text.utf8.decode).compile.toString
-      )
-
-    responseEncoded.pure[F]
-  }
-
-  // probably want to change this to implement pull and cancel, this may work but is not the best impl
-  private def toReadableStream[F[_]: Async](
-      stream: Stream[F, Byte],
-      dispatcher: Dispatcher[F]): js.Any = {
-    js.Dynamic
-      .newInstance(js.Dynamic.global.ReadableStream)(
-        js.Dynamic
-          .literal(
-            start = (controller: js.Dynamic) => {
-              val io = {
-                stream
-                  .chunks
-                  .evalMap { chunk =>
-                    Async[F].delay {
-                      val array = new js.typedarray.Uint8Array(chunk.size)
-                      chunk.toArray.zipWithIndex.foreach {
-                        case (byte, index) => array(index) = byte
-                      }
-                      controller.enqueue(array)
-                    }.void
-                  }
-                  .onFinalize(Async[F].delay(controller.close()).void)
-                  .compile
-                  .drain
-              }
-              dispatcher.unsafeToPromise(io)
-            }
-          )
-      )
-  }
-
-  def encodeResponseV2[F[_]: Async](
-      response: Response[F],
       dispatcher: Dispatcher[F],
       qBound: Int): F[js.Any] = {
     for {

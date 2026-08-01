@@ -56,7 +56,7 @@ abstract class IOAzureHttpFunction {
           val io = for {
             request <- Parser.decodeRequest[IO](requestJS)
             response <- handle(context).use(app => app.run(request))
-            respEncoded <- Parser.encodeResponseV2[IO](response, dispatcher, qBound)
+            respEncoded <- Parser.encodeResponse[IO](response, dispatcher, qBound)
           } yield respEncoded
 
           dispatcher.unsafeToPromise(io)
