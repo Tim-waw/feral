@@ -10,16 +10,15 @@ import cats.effect.Resource
 import cats.syntax.all._
 import cats.effect.unsafe.IORuntime
 
-//import scala.scalajs.js.JSConverters._
-//import org.http4s.Request
+
 import feral.functions.facade.JSRequest
-//import feral.functions.facade.JSHeaders
 import cats.effect.std.Dispatcher
 import feral.functions.util.Parser
-//import fs2.text.utf8
+import feral.functions.util.AppConfig.buildDefaultConfig
 
 abstract class IOAzureHttpFunction {
   protected def handler: InvocationContext => Resource[IO, HttpApp[IO]]
+  protected def appConfig = buildDefaultConfig(handlerFn).toJS
   protected def qBound: Int = 100
 
   private val runtime = IORuntime.global
@@ -29,15 +28,6 @@ abstract class IOAzureHttpFunction {
 
   private val functionName: String =
     getClass.getSimpleName.init
-
-  private val appConfig = js
-    .Dynamic
-    .literal(
-      methods = js.Array("GET", "PUT"),
-      authLevel = "anonymous",
-      route = "{*path}",
-      handler = handlerFn
-    )
 
   private lazy val handlerFn
       : js.Function2[JSRequest, InvocationContext, js.Promise[js.UndefOr[js.Any]]] = {

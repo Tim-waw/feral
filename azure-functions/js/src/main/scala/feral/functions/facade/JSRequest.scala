@@ -6,11 +6,8 @@ import scala.scalajs.js.typedarray.Uint8Array
 import fs2.Stream
 import fs2.Chunk
 
-//import cats.effect.IO
 import cats.effect.kernel.Async
 import cats.syntax.all._
-
-//may want to change to requestFacade.., think it over
 
 @js.native
 trait JSRequest extends js.Object {

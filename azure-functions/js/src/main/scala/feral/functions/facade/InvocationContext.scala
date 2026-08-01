@@ -54,5 +54,4 @@ trait Options extends js.Object {
 
 /* 
 https://docs.azure.cn/en-us/azure-functions/functions-reference-node?tabs=javascript%2Cwindows%2Cazure-cli&pivots=nodejs-model-v4#invocation-context
-
  */

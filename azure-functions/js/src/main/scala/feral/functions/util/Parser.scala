@@ -10,7 +10,6 @@ import org.http4s.Response
 import feral.functions.facade.JSRequest
 import feral.functions.facade.JSHeaders
 
-//import cats.effect.kernel.Concurrent
 import cats.effect.kernel.Async
 import cats.syntax.all._
 import cats.effect.syntax.all._
@@ -19,11 +18,9 @@ import org.typelevel.ci.CIString
 
 import scala.scalajs.js
 import feral.functions.facade.JSReadableStream
-//import scala.scalajs.js.annotation._
 
 import fs2.Stream
 import cats.effect.std.Dispatcher
-//import fs2.Chunk
 
 import StreamUtil._
 import cats.effect.std.Queue
@@ -44,12 +41,11 @@ object Parser {
 
         Headers(builder.result())
       }
-      // body = JSReadableStream.toFs2[F](request.body) //need to use generic type parameter in tofs2
     } yield Request[F](
       method = method,
       uri = uri,
       headers = headers,
-      body = body // need to convert into Entity
+      body = body 
     )
   }
 
