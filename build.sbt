@@ -20,7 +20,6 @@ name := "feral"
 
 ThisBuild / tlBaseVersion := "0.3"
 ThisBuild / startYear := Some(2021)
-ThisBuild / isSnapshot := true
 
 ThisBuild / developers := List(
   tlGitHubDev("armanbilge", "Arman Bilge"),
