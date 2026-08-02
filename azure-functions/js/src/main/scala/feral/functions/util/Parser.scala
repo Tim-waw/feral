@@ -1,3 +1,19 @@
+/*
+ * Copyright 2021 Typelevel
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package feral.functions.util
 
 import org.http4s.Request
@@ -9,25 +25,26 @@ import org.http4s.Response
 
 import feral.functions.facade.JSRequest
 import feral.functions.facade.JSHeaders
+import feral.functions.facade.JSReadableStream
+
+import cats.syntax.all._
 
 import cats.effect.kernel.Async
-import cats.syntax.all._
 import cats.effect.syntax.all._
+import cats.effect.std.Queue
+import cats.effect.kernel.Fiber
+import cats.effect.std.Dispatcher
 
 import org.typelevel.ci.CIString
 
 import scala.scalajs.js
-import feral.functions.facade.JSReadableStream
 
 import fs2.Stream
-import cats.effect.std.Dispatcher
 
 import StreamUtil._
-import cats.effect.std.Queue
-import cats.effect.kernel.Fiber
 
 object Parser {
-  def decodeRequest[F[_]: Async](request: JSRequest): F[Request[F]] = {
+  private[functions] def decodeRequest[F[_]: Async](request: JSRequest): F[Request[F]] = {
     for {
       method <- Method.fromString(request.method).liftTo[F]
       uri <- Uri.fromString(request.url).liftTo[F]
@@ -49,7 +66,7 @@ object Parser {
     )
   }
 
-  def encodeResponse[F[_]: Async](
+  private[functions] def encodeResponse[F[_]: Async](
       response: Response[F],
       dispatcher: Dispatcher[F],
       qBound: Int): F[js.Any] = {
@@ -68,7 +85,7 @@ object Parser {
     }
   }
 
-  def createStreamFiber[F[_]: Async](
+  private def createStreamFiber[F[_]: Async](
       stream: Stream[F, Byte],
       q: Queue[F, StreamData]): F[Fiber[F, Throwable, Unit]] = {
     stream
@@ -84,12 +101,12 @@ object Parser {
       .start
   }
 
-  def createHeaders[F[_]: Async](responseHeaders: Headers): F[js.Dictionary[String]] = {
+  private def createHeaders[F[_]: Async](responseHeaders: Headers): F[js.Dictionary[String]] = {
     val headersList = responseHeaders.headers.map(h => (h.name.toString, h.value))
     js.Dictionary(headersList: _*).pure[F]
   }
 
-  def createBodyStream[F[_]: Async](
+  private def createBodyStream[F[_]: Async](
       q: Queue[F, StreamData],
       streamFiber: Fiber[F, Throwable, Unit],
       dispatcher: Dispatcher[F]): F[js.Any] = {
@@ -112,7 +129,7 @@ object Parser {
     readableStream.pure[F]
   }
 
-  def createPullEffect[F[_]: Async](
+  private def createPullEffect[F[_]: Async](
       controller: js.Dynamic,
       q: Queue[F, StreamData]): F[Unit] = {
     q.take.flatMap {
