@@ -32,9 +32,10 @@ import cats.effect.Resource
 import cats.syntax.all._
 import cats.effect.unsafe.IORuntime
 import cats.effect.std.Dispatcher
+import feral.functions.facade.Context
 
 abstract class IOAzureHttpFunction {
-  protected def handler: InvocationContext => Resource[IO, HttpApp[IO]]
+  protected def handler: Context => Resource[IO, HttpApp[IO]]
   protected def appConfig: AppConfig = buildDefaultConfig(handlerFn)
   protected def qBound: Int = 100
 
@@ -62,7 +63,7 @@ abstract class IOAzureHttpFunction {
         case (dispatcher, handle) => {
           val io = for {
             request <- Parser.decodeRequest[IO](requestJS)
-            response <- handle(context).use(app => app.run(request))
+            response <- handle(Context(context)).use(app => app.run(request))
             respEncoded <- Parser.encodeResponse[IO](response, dispatcher, qBound)
           } yield respEncoded
 

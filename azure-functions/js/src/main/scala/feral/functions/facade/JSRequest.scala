@@ -36,7 +36,7 @@ private[functions] trait JSRequest extends js.Object {
 @js.native
 private[functions] trait JSHeaders extends js.Object {
   def get(name: String): js.UndefOr[String] = js.native
-  def keys(): js.Iterator[String] = js.native 
+  def keys(): js.Iterator[String] = js.native
 }
 
 @js.native
@@ -63,7 +63,7 @@ object JSHeaders {
     val itr = h.keys()
     var entity = itr.next()
 
-    while(!entity.done) {
+    while (!entity.done) {
       builder.addOne(entity.value)
       entity = itr.next()
     }
@@ -72,27 +72,29 @@ object JSHeaders {
   }
 
   object Syntax {
-    //syntax for method like calls???
+    // syntax for method like calls???
   }
 }
 
 object JSReadableStream {
-  private[functions] def toFs2[F[_]: Async](streamOption: js.UndefOr[JSReadableStream]): Stream[F, Byte] = {
+  private[functions] def toFs2[F[_]: Async](
+      streamOption: js.UndefOr[JSReadableStream]): Stream[F, Byte] = {
     streamOption.toOption match {
       case None => Stream.empty
       case Some(null) => Stream.empty
       case Some(stream) => {
-        Stream.eval(Async[F].delay(stream.getReader())).flatMap{ reader => 
+        Stream.eval(Async[F].delay(stream.getReader())).flatMap { reader =>
           def nextChunk = {
-            Async[F].fromPromise(Async[F].delay(reader.read())).map{ read => 
-              if(read.done) {
+            Async[F].fromPromise(Async[F].delay(reader.read())).map { read =>
+              if (read.done) {
                 None
               } else {
-                val chunk = read.value
+                val chunk = read
+                  .value
                   .toOption
                   .map(arr => Chunk.array[Byte](toByteArray(arr)))
                   .getOrElse(Chunk.empty[Byte])
-                  
+
                 Some(chunk)
               }
             }
@@ -108,12 +110,12 @@ object JSReadableStream {
     }
   }
 
-  private def toByteArray(array: Uint8Array): Array[Byte] = { 
+  private def toByteArray(array: Uint8Array): Array[Byte] = {
     val builder = Array.newBuilder[Byte]
     val length = array.length
     var index = 0
 
-    while(index != length) {
+    while (index != length) {
       builder.addOne(array(index).toByte)
       index = index + 1
     }
